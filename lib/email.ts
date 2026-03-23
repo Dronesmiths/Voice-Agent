@@ -139,7 +139,7 @@ export class EmailService {
           <div style="background-color: white; padding: 32px 24px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 24px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
             <h3 style="color: #0f172a; margin-top: 0; font-size: 18px; margin-bottom: 8px;">Review Audio & Caller Data 🎧</h3>
             <p style="color: #64748b; font-size: 14px; margin-bottom: 24px; line-height: 1.5;">Access the full call analytics matrix, view caller profile data, and securely interact with your internal CRM inside your native dashboard.</p>
-            <a href="${dashboardUrl}" style="background-color: #2563eb; color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 250px;">
+            <a href="${dashboardUrl}" style="background-color: #2563eb; color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
               Access Dashboard
             </a>
           </div>` : ''}
