@@ -137,6 +137,8 @@ async function handleEndOfCallReport(message: any) {
   const shortSummary = message.summary ? message.summary.substring(0, 90) : 'Check dashboard for details.';
   const alertMsg = `AI Pilots Alert: Call completed with ${callerNumber} (${durationMins}m). \n\nSummary: ${shortSummary}... \n\nCheck email for full transcript!`;
 
+  let whatsappStatus = 'skipped';
+
   // WHATSAPP META GRAPH DISPATCH
   if (owningClient.whatsappApiConnected && (owningClient.whatsappPhoneNumber || owningClient.metaAccountId)) {
     try {
@@ -148,15 +150,21 @@ async function handleEndOfCallReport(message: any) {
         const axios = require('axios'); // Dynamic import if needed, or rely on global
         await axios.post(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
           messaging_product: "whatsapp",
+          recipient_type: "individual",
+          type: "text",
           to: toPhone.replace(/[^0-9]/g, ''), // Ensure clean numeric string for WhatsApp
-          text: { body: alertMsg }
+          text: { preview_url: false, body: alertMsg }
         }, {
           headers: { Authorization: `Bearer ${activeAccessToken}` }
         });
         console.log(`[WEBHOOK] WhatsApp Notification dispatched successfully to ${toPhone}`);
+        whatsappStatus = 'success';
+      } else {
+        whatsappStatus = 'missing_auth_or_phone_id';
       }
     } catch (waErr: any) {
       console.error(`[WEBHOOK] WhatsApp Dispatch Failed:`, waErr.response?.data || waErr.message);
+      whatsappStatus = `error: ${JSON.stringify(waErr.response?.data || waErr.message)}`;
     }
   }
 
@@ -175,7 +183,7 @@ async function handleEndOfCallReport(message: any) {
     }
   }
 
-  return NextResponse.json({ success: true, processed: true });
+  return NextResponse.json({ success: true, processed: true, whatsappStatus });
 }
 
 function generateErrorResponse(toolList: any[], errorMessage: string) {
