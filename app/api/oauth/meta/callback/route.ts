@@ -53,9 +53,41 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Database User not found during Meta OAuth intercept.' }, { status: 404 });
     }
 
+    // 4.5. Autonomously traverse the Meta Graph API to isolate the required WhatsApp Sender Phone ID
+    let fetchedPhoneId = '';
+    try {
+      const bizRes = await fetch(`https://graph.facebook.com/v19.0/me/businesses?access_token=${finalToken}`);
+      const bizData = await bizRes.json();
+      
+      if (bizData.data && bizData.data.length > 0) {
+        // Iterate through businesses to find an active WABA
+        for (const biz of bizData.data) {
+          const wabaRes = await fetch(`https://graph.facebook.com/v19.0/${biz.id}/owned_whatsapp_business_accounts?access_token=${finalToken}`);
+          const wabaData = await wabaRes.json();
+          
+          if (wabaData.data && wabaData.data.length > 0) {
+            const wabaId = wabaData.data[0].id;
+            const phoneRes = await fetch(`https://graph.facebook.com/v19.0/${wabaId}/phone_numbers?access_token=${finalToken}`);
+            const phoneData = await phoneRes.json();
+            
+            if (phoneData.data && phoneData.data.length > 0) {
+              fetchedPhoneId = phoneData.data[0].id; // The absolute Sender ID Node
+              break; // Lock it in and exit traversal
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      console.warn("[OAUTH] Autonomous WhatsApp Phone ID traversal failed silently:", e.message);
+    }
+
     // Mark it connected!
     userProfile.whatsappApiConnected = true;
     userProfile.metaAccessToken = finalToken;
+    if (fetchedPhoneId) {
+      userProfile.metaAccountId = fetchedPhoneId;
+      console.log(`[OAUTH] Automatically bonded WhatsApp Sender ID: ${fetchedPhoneId}`);
+    }
     
     await userProfile.save();
     console.log(`[OAUTH] Meta/WhatsApp API successfully bonded natively to ${userProfile.email}`);
