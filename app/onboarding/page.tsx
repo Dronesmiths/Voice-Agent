@@ -3,14 +3,90 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import styles from './page.module.css';
+import Vapi from '@vapi-ai/web';
+import { Play, Square, Loader2 } from 'lucide-react';
 
 export default function OnboardingWizard() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [activeAudio, setActiveAudio] = useState<HTMLAudioElement | null>(null);
   const totalSteps = 6; // INCREASED TO 6!
+
+  // --- VAPI WEB AUDIO PREVIEW LOGIC ---
+  const [vapiClient, setVapiClient] = useState<any>(null);
+  const [testingVoiceId, setTestingVoiceId] = useState<string | null>(null);
+  const callTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Client-side execution isolation
+    const vapi = new Vapi('74c72495-b876-477b-84cd-3bcff1c23c0d');
+    setVapiClient(vapi);
+    
+    vapi.on('call-end', () => {
+      setTestingVoiceId(null);
+      if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
+    });
+
+    return () => {
+      vapi.stop();
+      vapi.removeAllListeners();
+    };
+  }, []);
+
+  const handlePreviewVoice = (voiceId: string, voiceLabel: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Restrains selecting the box while just aggressively trying to play audio
+    
+    if (!vapiClient) return;
+
+    if (testingVoiceId === voiceId) {
+      vapiClient.stop();
+      setTestingVoiceId(null);
+      return;
+    }
+
+    vapiClient.stop();
+    setTestingVoiceId(voiceId + '-loading');
+
+    let elevenLabsId = 'bIHbv24MWmeRgasZH58o';
+    switch (voiceId) {
+      case 'Sarah': elevenLabsId = '21m00Tcm4TlvDq8ikWAM'; break;
+      case 'Bella': elevenLabsId = 'EXAVITQu4vr4xnSDxMaL'; break;
+      case 'Emily': elevenLabsId = 'bIHbv24MWmeRgasZH58o'; break;
+      case 'Shirley': elevenLabsId = '9QPzUjm1evjwY2ENQBKU'; break;
+      case 'Adam': elevenLabsId = 'pNInz6obbfdqGcgCEhFa'; break;
+      case 'Antoni': elevenLabsId = 'ErXwobaYiN019PkySvjV'; break;
+      case 'Thomas': elevenLabsId = 'GBv7mTt0atIp3Br8iCZE'; break;
+    }
+
+    vapiClient.start("76d5995a-d925-47d8-b6e9-e7e9d1dfc721", {
+      model: {
+        provider: "openai",
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "system",
+          content: `You are ${voiceLabel}. A human is test-driving your voice natively right now for their business. Introduce yourself excitedly, let them confidently speak back to you, and casually have a extremely brief, incredibly friendly 20-second conversation. You MUST politely naturally say goodbye and end the call dynamically after literally 2 or 3 short conversational interactions.`
+        }]
+      },
+      voice: {
+        provider: "11labs",
+        voiceId: elevenLabsId
+      }
+    }).then(() => {
+      setTestingVoiceId(voiceId);
+      // Hard architectural cutoff strictly at 30 exact seconds to prevent massive usage costs
+      callTimeoutRef.current = setTimeout(() => {
+        vapiClient.stop();
+        setTestingVoiceId(null);
+        toast('Live Preview time limit safely reached (30s).', { icon: '⏱️' });
+      }, 30000);
+    }).catch((err: any) => {
+      console.error(err);
+      toast.error("Microphone access rigorously denied or socket connection mathematically failed.");
+      setTestingVoiceId(null);
+    });
+  };
+  // ------------------------------------
 
   // Global Onboarding State
   const [formData, setFormData] = useState({
@@ -314,6 +390,26 @@ export default function OnboardingWizard() {
                     style={{ padding: '16px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', justifyContent: 'center', textAlign: 'center' }}
                   >
                     <span style={{ fontWeight: '600', fontSize: '14px', color: '#1e293b' }}>{voice.label}</span>
+                    
+                    {/* Live Interactive Microphone Audio Button */}
+                    <button 
+                      onClick={(e) => handlePreviewVoice(voice.id, voice.label, e)}
+                      className="absolute bottom-3 right-3 p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 transition-colors shadow-sm z-10"
+                      title="Test this voice live with your microphone"
+                    >
+                      {testingVoiceId === voice.id + '-loading' ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : testingVoiceId === voice.id ? (
+                        <Square size={16} className="fill-current animate-pulse text-red-500" />
+                      ) : (
+                        <Play size={16} className="fill-current ml-0.5" />
+                      )}
+                    </button>
+                    
+                    {/* Show active indicator ring prominently around box if explicitly being tested */}
+                    {testingVoiceId === voice.id && (
+                       <div className="absolute inset-0 rounded-xl border-2 border-blue-400 animate-pulse pointer-events-none"></div>
+                    )}
                   </div>
                 ))}
               </div>
