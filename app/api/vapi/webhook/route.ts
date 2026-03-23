@@ -140,10 +140,10 @@ async function handleEndOfCallReport(message: any) {
   let whatsappStatus = 'skipped';
 
   // WHATSAPP META GRAPH DISPATCH
-  if (owningClient.whatsappApiConnected && (owningClient.whatsappPhoneNumber || owningClient.metaAccountId)) {
+  if (owningClient.whatsappApiConnected && (owningClient.whatsappPhoneNumber || owningClient.metaAccountId || process.env.WHATSAPP_PHONE_NUMBER_ID)) {
     try {
       const activeAccessToken = owningClient.metaAccessToken || process.env.META_SYSTEM_ACCESS_TOKEN;
-      const phoneNumberId = owningClient.metaAccountId || owningClient.whatsappPhoneNumber; // The sender ID
+      const phoneNumberId = owningClient.metaAccountId || owningClient.whatsappPhoneNumber || process.env.WHATSAPP_PHONE_NUMBER_ID; // The global fallback sender ID
       const toPhone = owningClient.personalPhone || owningClient.whatsappPhoneNumber; // Where to send the alert to
       
       if (activeAccessToken && phoneNumberId && toPhone) {
