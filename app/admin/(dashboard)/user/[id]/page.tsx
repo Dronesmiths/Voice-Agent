@@ -132,9 +132,51 @@ export default function ManageUser() {
               )}
             </div>
           </div>
-          <div>
+          <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', color: '#64748b', fontSize: '12px', textTransform: 'uppercase', marginBottom: '4px' }}>Pabbly Subscription ID</label>
             <div style={{ color: '#cbd5e1', fontSize: '14px', fontFamily: 'monospace' }}>{user.pabblySubscriptionId || 'None'}</div>
+          </div>
+
+          <div style={{ borderTop: '1px solid #334155', paddingTop: '20px' }}>
+            <h3 style={{ fontSize: '14px', margin: '0 0 12px 0', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Connected Integrations</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e293b', padding: '10px 14px', borderRadius: '8px', border: '1px solid #334155' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '16px' }}>💬</span>
+                  <span style={{ fontSize: '13px', color: '#e2e8f0', fontWeight: '500' }}>WhatsApp API</span>
+                </div>
+                {user.whatsappApiConnected ? (
+                  <span style={{ color: '#10b981', fontSize: '11px', fontWeight: 'bold', background: 'rgba(16, 185, 129, 0.15)', padding: '4px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>✓ Connected</span>
+                ) : (
+                  <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: 'bold', background: 'rgba(239, 68, 68, 0.15)', padding: '4px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>⚠ Disconnected</span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e293b', padding: '10px 14px', borderRadius: '8px', border: '1px solid #334155' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '16px' }}>📱</span>
+                  <span style={{ fontSize: '13px', color: '#e2e8f0', fontWeight: '500' }}>SMS (Twilio)</span>
+                </div>
+                {!!user.twilioNumber ? (
+                  <span style={{ color: '#10b981', fontSize: '11px', fontWeight: 'bold', background: 'rgba(16, 185, 129, 0.15)', padding: '4px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>✓ Connected</span>
+                ) : (
+                  <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: 'bold', background: 'rgba(239, 68, 68, 0.15)', padding: '4px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>⚠ Disconnected</span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e293b', padding: '10px 14px', borderRadius: '8px', border: '1px solid #334155' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '16px' }}>📅</span>
+                  <span style={{ fontSize: '13px', color: '#e2e8f0', fontWeight: '500' }}>Google Calendar</span>
+                </div>
+                {user.googleCalendarConnected ? (
+                  <span style={{ color: '#10b981', fontSize: '11px', fontWeight: 'bold', background: 'rgba(16, 185, 129, 0.15)', padding: '4px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>✓ Connected</span>
+                ) : (
+                  <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: 'bold', background: 'rgba(239, 68, 68, 0.15)', padding: '4px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>⚠ Disconnected</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
