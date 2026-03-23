@@ -11,11 +11,10 @@ import ConnectSmsForm from './ConnectSmsForm';
 import confetti from 'canvas-confetti';
 
 export default function CompletionBar({ hasSms, hasCalendar, hasWhatsapp }: CompletionProps) {
-  // Score out of 4 (Agent is automatically 1/4)
+  // Score out of 3 (Agent is automatically 1/3)
   let stepsCompleted = 1; 
   if (hasSms) stepsCompleted++;
   if (hasCalendar) stepsCompleted++;
-  if (hasWhatsapp) stepsCompleted++;
 
   React.useEffect(() => {
     const prevCount = parseInt(localStorage.getItem('aipilots_dopamine_score') || '0', 10);
@@ -31,7 +30,7 @@ export default function CompletionBar({ hasSms, hasCalendar, hasWhatsapp }: Comp
     localStorage.setItem('aipilots_dopamine_score', stepsCompleted.toString());
   }, [stepsCompleted]);
 
-  const percentage = Math.round((stepsCompleted / 4) * 100);
+  const percentage = Math.round((stepsCompleted / 3) * 100);
 
   return (
     <div style={{ marginBottom: '32px', background: '#ffffff', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: percentage === 100 ? '0 0 15px rgba(22, 163, 74, 0.2)' : '0 4px 6px rgba(0,0,0,0.02)' }}>
@@ -90,25 +89,6 @@ export default function CompletionBar({ hasSms, hasCalendar, hasWhatsapp }: Comp
           </div>
         </div>
 
-        {/* WhatsApp Card */}
-        <div style={{ padding: '16px', border: '1px solid', borderColor: hasWhatsapp ? '#86efac' : '#e2e8f0', background: hasWhatsapp ? '#f0fdf4' : '#f8fafc', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '20px' }}>💬</span>
-            <div>
-              <div style={{ fontWeight: '600', fontSize: '14px', color: '#0f172a' }}>WhatsApp Webhooks</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Route lead notifications securely</div>
-            </div>
-          </div>
-          <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
-            {hasWhatsapp ? (
-              <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓ Connected</span>
-            ) : (
-              <a href="/api/oauth/meta" style={{ textDecoration: 'none' }}>
-                <button style={{ background: '#25d366', color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 2px 4px rgba(37, 211, 102, 0.3)' }}>Connect Meta OAuth</button>
-              </a>
-            )}
-          </div>
-        </div>
 
       </div>
     </div>
