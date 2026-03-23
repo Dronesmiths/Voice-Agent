@@ -123,7 +123,13 @@ async function handleEndOfCallReport(message: any) {
 
   try {
     const emailService = new EmailService();
-    await emailService.sendEndOfCallTranscript(clientEmail, callerNumber, durationMins, message.summary, message.recordingUrl, message.transcript);
+    const dashboardUrl = emailService.generateMagicLink(
+      owningClient.email, 
+      owningClient.name || 'Client', 
+      assistantId, 
+      agentTwilioData || 'Pending'
+    );
+    await emailService.sendEndOfCallTranscript(clientEmail, callerNumber, durationMins, message.summary, message.recordingUrl, message.transcript, dashboardUrl);
   } catch (err) {
     console.error("[WEBHOOK] Email dispatch error:", err);
   }

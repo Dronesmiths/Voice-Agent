@@ -105,7 +105,7 @@ export class EmailService {
   /**
    * Dispatches the comprehensive Post-Call HTML Analysis Matrix immediately after an AI call concludes.
    */
-  async sendEndOfCallTranscript(clientEmail: string, callerNumber: string, durationMins: number, summary: string, recordingUrl: string, transcript: string): Promise<void> {
+  async sendEndOfCallTranscript(clientEmail: string, callerNumber: string, durationMins: number, summary: string, recordingUrl: string, transcript: string, dashboardUrl?: string): Promise<void> {
     try {
       console.log(`[EMAIL SERVICE] Dispatching explicit Call Transcript explicitly to ${clientEmail}...`);
       
@@ -135,7 +135,14 @@ export class EmailService {
             <pre style="white-space: pre-wrap; font-family: monospace; color: #1e293b; font-size: 13px;">${transcript || 'No transcript generated.'}</pre>
           </div>
           
-          <p style="color: #94a3b8; font-size: 12px; margin-top: 32px; text-align: center;">You can securely view this interaction natively inside your AI Pilots Dashboard.</p>
+          ${dashboardUrl ? `
+          <div style="margin-top: 32px; text-align: center;">
+            <a href="${dashboardUrl}" style="background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+              Access Your Dashboard
+            </a>
+          </div>` : ''}
+          
+          <p style="color: #94a3b8; font-size: 12px; margin-top: ${dashboardUrl ? '16px' : '32px'}; text-align: center;">You can securely view this interaction natively inside your AI Pilots Dashboard.</p>
         </div>
       `;
 
