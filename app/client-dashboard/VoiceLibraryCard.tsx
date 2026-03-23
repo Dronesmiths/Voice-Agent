@@ -3,69 +3,98 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import confetti from 'canvas-confetti';
+import Vapi from '@vapi-ai/web';
+import { Play, Square, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface VoiceSchema {
-  voice_id: string;
+  voice_id: string; // This will directly uniquely map safely to the 11Labs ID
   name: string;
   category: string;
-  preview_url: string;
-  labels?: Record<string, string>;
 }
 
+const STATIC_VOICES: VoiceSchema[] = [
+  { name: 'Sarah (Professional Female)', voice_id: '21m00Tcm4TlvDq8ikWAM', category: 'Premium' },
+  { name: 'Bella (Friendly Female)', voice_id: 'EXAVITQu4vr4xnSDxMaL', category: 'Premium' },
+  { name: 'Emily (Warm Female)', voice_id: 'bIHbv24MWmeRgasZH58o', category: 'Standard' },
+  { name: 'Aunt Shirley (Southern Female)', voice_id: '9QPzUjm1evjwY2ENQBKU', category: 'Regional' },
+  { name: 'Adam (Professional Male)', voice_id: 'pNInz6obbfdqGcgCEhFa', category: 'Premium' },
+  { name: 'Antoni (Friendly Male)', voice_id: 'ErXwobaYiN019PkySvjV', category: 'Premium' },
+  { name: 'Thomas (Calm Male)', voice_id: 'GBv7mTt0atIp3Br8iCZE', category: 'Standard' }
+];
+
 export default function VoiceLibraryCard({ initialFavorites = [] }: { initialFavorites?: any[] }) {
-  const [voices, setVoices] = useState<VoiceSchema[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [voices] = useState<VoiceSchema[]>(STATIC_VOICES);
+  const [loading, setLoading] = useState(false); // No longer strictly dynamically loading from broken 11Labs
   const [error, setError] = useState('');
   
   // Favorites State System
   const [favorites, setFavorites] = useState<any[]>(initialFavorites);
   
-  // Real-time Audio Tracking Engine
-  const [playingId, setPlayingId] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Real-time WebRTC Audio Tracking Engine
+  const [vapiClient, setVapiClient] = useState<any>(null);
+  const [testingVoiceId, setTestingVoiceId] = useState<string | null>(null);
+  const callTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Vapi Auto-Patching State
   const [isPatching, setIsPatching] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchLibrary();
+    // Client-side initialization exactly mathematically like the onboarding architecture
+    const vapi = new Vapi('74c72495-b876-477b-84cd-3bcff1c23c0d');
+    setVapiClient(vapi);
+    
+    vapi.on('call-end', () => {
+      setTestingVoiceId(null);
+      if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
+    });
+
+    return () => {
+      vapi.stop();
+      vapi.removeAllListeners();
+    };
   }, []);
 
-  const fetchLibrary = async () => {
-    try {
-      const { data } = await axios.get('/api/elevenlabs/library');
-      if (data.success) {
-        // Filter specifically for voices that physically possess an MP3 preview to avoid browser audio failures
-        const playableVoices = data.voices.filter((v: VoiceSchema) => v.preview_url);
-        // Grab the top 5 to keep the Gamified UI incredibly clean
-        setVoices(playableVoices.slice(0, 5));
-      }
-    } catch (err) {
-      setError('ElevenLabs sync structurally failed. Checking API Keys...');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handlePreviewVoice = (v: VoiceSchema, e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    
+    if (!vapiClient) return;
 
-  const togglePlay = (voice: VoiceSchema) => {
-    if (playingId === voice.voice_id) {
-      // Pause
-      if (audioRef.current) audioRef.current.pause();
-      setPlayingId(null);
-    } else {
-      // Reset
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      // Create fresh buffer
-      audioRef.current = new Audio(voice.preview_url);
-      
-      // Auto-teardown when finished hitting the end of the MP3 signature
-      audioRef.current.onended = () => setPlayingId(null);
-      
-      audioRef.current.play();
-      setPlayingId(voice.voice_id);
+    if (testingVoiceId === v.voice_id) {
+      vapiClient.stop();
+      setTestingVoiceId(null);
+      return;
     }
+
+    vapiClient.stop();
+    setTestingVoiceId(v.voice_id + '-loading');
+
+    vapiClient.start("76d5995a-d925-47d8-b6e9-e7e9d1dfc721", {
+      model: {
+        provider: "openai",
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "system",
+          content: `You are ${v.name}. A human is organically test-driving your premium voice right now natively in their Agent Dashboard. Introduce yourself excitedly, let them safely speak back to you, and casually aggressively have an extremely brief, securely friendly 20-second conversation. You MUST politely seamlessly say goodbye and systematically automatically hang up explicitly after perfectly 2 or 3 short conversational interactions.`
+        }]
+      },
+      voice: {
+        provider: "11labs",
+        voiceId: v.voice_id
+      }
+    }).then(() => {
+      setTestingVoiceId(v.voice_id);
+      
+      callTimeoutRef.current = setTimeout(() => {
+        vapiClient.stop();
+        setTestingVoiceId(null);
+        toast('Live WebRTC Preview limits formally reached (30s).', { icon: '⏱️' });
+      }, 30000);
+    }).catch((err: any) => {
+      console.error(err);
+      toast.error("Microphone access legally denied or explicit socket connection violently failed.");
+      setTestingVoiceId(null);
+    });
   };
 
   const applyVoiceToAgent = async (voiceId: string) => {
@@ -96,11 +125,11 @@ export default function VoiceLibraryCard({ initialFavorites = [] }: { initialFav
     const isFav = favorites.some((f) => f.voiceId === voice.voice_id);
     const action = isFav ? 'remove' : 'add';
 
-    // Optimistic UI Update 
+    // Optimistic UI Update structurally
     if (isFav) {
       setFavorites(favorites.filter((f) => f.voiceId !== voice.voice_id));
     } else {
-      setFavorites([...favorites, { voiceId: voice.voice_id, name: voice.name, preview_url: voice.preview_url }]);
+      setFavorites([...favorites, { voiceId: voice.voice_id, name: voice.name, preview_url: '' }]);
     }
 
     try {
@@ -108,10 +137,10 @@ export default function VoiceLibraryCard({ initialFavorites = [] }: { initialFav
         action, 
         voiceId: voice.voice_id, 
         name: voice.name, 
-        preview_url: voice.preview_url 
+        preview_url: '' 
       });
     } catch (err) {
-      console.error('Failed to sync Gamified Favorites state safely back to Database');
+      console.error('Failed to safely sync Gamified Favorites state natively back to Database');
     }
   };
 
@@ -145,10 +174,17 @@ export default function VoiceLibraryCard({ initialFavorites = [] }: { initialFav
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button 
-                    onClick={() => togglePlay(v)}
-                    style={{ width: '36px', height: '36px', borderRadius: '50%', background: playingId === v.voice_id ? '#ef4444' : '#2563eb', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
+                    onClick={(e) => handlePreviewVoice(v, e)}
+                    style={{ width: '36px', height: '36px', borderRadius: '50%', background: testingVoiceId === v.voice_id ? '#ef4444' : '#2563eb', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
+                    title="Live Test this voice via Microphone"
                   >
-                    {playingId === v.voice_id ? '⏸' : '▶'}
+                    {testingVoiceId === v.voice_id + '-loading' ? (
+                      <Loader2 size={18} className="animate-spin text-white" />
+                    ) : testingVoiceId === v.voice_id ? (
+                      <Square size={18} className="fill-current animate-pulse text-white" />
+                    ) : (
+                      <Play size={18} className="fill-current ml-0.5 text-white" />
+                    )}
                   </button>
                   <button 
                     onClick={() => toggleFavorite(v)}
