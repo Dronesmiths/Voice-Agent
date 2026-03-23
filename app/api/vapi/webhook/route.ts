@@ -121,18 +121,49 @@ async function handleEndOfCallReport(message: any) {
   const callerNumber = message.call?.customer?.number || 'Unknown Caller';
   const durationMins = Math.max(1, Math.round((message.duration || 0) / 60));
 
-  const emailService = new EmailService();
-  await emailService.sendEndOfCallTranscript(clientEmail, callerNumber, durationMins, message.summary, message.recordingUrl, message.transcript);
+  try {
+    const emailService = new EmailService();
+    await emailService.sendEndOfCallTranscript(clientEmail, callerNumber, durationMins, message.summary, message.recordingUrl, message.transcript);
+  } catch (err) {
+    console.error("[WEBHOOK] Email dispatch error:", err);
+  }
 
+  const shortSummary = message.summary ? message.summary.substring(0, 90) : 'Check dashboard for details.';
+  const alertMsg = `AI Pilots Alert: Call completed with ${callerNumber} (${durationMins}m). \n\nSummary: ${shortSummary}... \n\nCheck email for full transcript!`;
+
+  // WHATSAPP META GRAPH DISPATCH
+  if (owningClient.whatsappApiConnected && (owningClient.whatsappPhoneNumber || owningClient.metaAccountId)) {
+    try {
+      const activeAccessToken = owningClient.metaAccessToken || process.env.META_SYSTEM_ACCESS_TOKEN;
+      const phoneNumberId = owningClient.metaAccountId || owningClient.whatsappPhoneNumber; // The sender ID
+      const toPhone = owningClient.personalPhone || owningClient.whatsappPhoneNumber; // Where to send the alert to
+      
+      if (activeAccessToken && phoneNumberId && toPhone) {
+        const axios = require('axios'); // Dynamic import if needed, or rely on global
+        await axios.post(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
+          messaging_product: "whatsapp",
+          to: toPhone.replace(/[^0-9]/g, ''), // Ensure clean numeric string for WhatsApp
+          text: { body: alertMsg }
+        }, {
+          headers: { Authorization: `Bearer ${activeAccessToken}` }
+        });
+        console.log(`[WEBHOOK] WhatsApp Notification dispatched successfully to ${toPhone}`);
+      }
+    } catch (waErr: any) {
+      console.error(`[WEBHOOK] WhatsApp Dispatch Failed:`, waErr.response?.data || waErr.message);
+    }
+  }
+
+  // TWILIO SMS DISPATCH (Fallback or concurrent if desired)
   if (clientPhone && agentTwilioData && agentTwilioData !== 'Pending') {
     try {
       const twilio = new TwilioService();
-      const shortSummary = message.summary ? message.summary.substring(0, 90) : 'Check dashboard for details.';
       await twilio.sendSms(
         clientPhone, 
         agentTwilioData, 
-        `AI Pilots Alert: Call completed with ${callerNumber} (${durationMins}m). \n\nSummary: ${shortSummary}... \n\nCheck email for full transcript!`
+        alertMsg
       );
+      console.log(`[WEBHOOK] Twilio SMS dispatched successfully to ${clientPhone}`);
     } catch (e: any) {
       console.error(`[WEBHOOK] SMS Dispatch Failed: ${e.message}`);
     }
