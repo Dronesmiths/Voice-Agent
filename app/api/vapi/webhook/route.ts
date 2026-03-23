@@ -165,8 +165,6 @@ async function handleEndOfCallReport(message: any) {
       console.error(`[WEBHOOK] WhatsApp Dispatch Failed:`, waErr.response?.data || waErr.message);
       whatsappStatus = `error: ${JSON.stringify(waErr.response?.data || waErr.message)}`;
     }
-  }
-
   // TWILIO SMS DISPATCH (Fallback or concurrent if desired)
   if (clientPhone && agentTwilioData && agentTwilioData !== 'Pending') {
     try {
