@@ -1,20 +1,41 @@
 {
-  "name": "ai-switchboard-backend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "ai-pilots-dashboard",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "pages:build": "npx @cloudflare/next-on-pages",
+    "start": "next start",
+    "lint": "eslint"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "@vapi-ai/server-sdk": "^0.11.0",
-    "cors": "^2.8.6",
+    "@types/canvas-confetti": "^1.9.0",
+    "axios": "^1.13.6",
+    "canvas-confetti": "^1.9.4",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "googleapis": "^171.4.0"
+    "googleapis": "^171.4.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.3.1",
+    "next": "16.2.0",
+    "nodemailer": "^8.0.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-hot-toast": "^2.6.0",
+    "resend": "^6.9.4",
+    "twilio": "^5.13.0",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20",
+    "@types/nodemailer": "^7.0.11",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.0",
+    "typescript": "^5"
   }
 }
